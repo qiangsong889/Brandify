@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import './style.css';
+
 var map, infoWindow, geocoder;
 class Map extends React.Component {
   constructor(props) {
@@ -117,12 +118,15 @@ class Map extends React.Component {
       location.postalCode
     );
     var self = this;
+    var image = 'https://furtaev.ru/preview/liked_place_map_pointer_small.png';
+    var marker;
     geocoder.geocode({ address: array.join(',') }, function(results, status) {
       if (status == 'OK') {
-        var marker = new google.maps.Marker({
+        marker = new google.maps.Marker({
           map: map,
           animation: google.maps.Animation.DROP,
-          position: results[0].geometry.location
+          position: results[0].geometry.location,
+          icon: image
         });
         marker.addListener('click', self.toggleBounce);
       } else {
@@ -132,10 +136,11 @@ class Map extends React.Component {
   }
 
   toggleBounce() {
-    if (marker.getAnimation() !== null) {
-      marker.setAnimation(null);
+    console.log(this);
+    if (this.getAnimation() !== null) {
+      this.setAnimation(null);
     } else {
-      marker.setAnimation(google.maps.Animation.BOUNCE);
+      this.setAnimation(google.maps.Animation.BOUNCE);
     }
   }
   drop(locations) {
