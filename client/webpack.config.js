@@ -1,6 +1,6 @@
 const path = require('path');
 module.exports = {
-  entry: path.resolve(__dirname, './src/index.jsx'),
+  entry: ['babel-polyfill', path.resolve(__dirname, './src/index.jsx')],
   output: {
     path: path.resolve(__dirname, './public'),
     filename: 'bundle.js'
@@ -14,6 +14,10 @@ module.exports = {
         options: {
           presets: ['env', 'react']
         }
+      },
+      {
+        test: /\.css$/,
+        loaders: ['style-loader', 'css-loader']
       }
     ]
   },
