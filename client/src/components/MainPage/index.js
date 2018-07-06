@@ -18,7 +18,7 @@ class Main extends React.Component {
     return (
       <div>
         {this.state.sessionId ? (
-          <Map />
+          <Map sessionId={this.state.sessionId} />
         ) : (
           <Login updateSessionId={this.updateSessionId} />
         )}
