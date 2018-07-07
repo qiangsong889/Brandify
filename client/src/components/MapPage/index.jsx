@@ -2,7 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import './style.css';
 
-var map, infoWindow, geocoder;
+var map, geocoder, infoWindow, previusMarker;
 class Map extends React.Component {
   constructor(props) {
     super(props);
@@ -120,27 +120,47 @@ class Map extends React.Component {
     var self = this;
     var image = 'https://furtaev.ru/preview/liked_place_map_pointer_small.png';
     var marker;
+
     geocoder.geocode({ address: array.join(',') }, function(results, status) {
       if (status == 'OK') {
         marker = new google.maps.Marker({
           map: map,
           animation: google.maps.Animation.DROP,
           position: results[0].geometry.location,
-          icon: image
+          icon: image,
+          address1: array,
+          address2: location.address2,
+          locationId: location.locationId
         });
-        marker.addListener('click', self.toggleBounce);
+        marker.addListener('click', self.toggleBounceAndInfoWindow);
       } else {
         alert('Geocode was not successful for the following reason: ' + status);
       }
     });
   }
-
-  toggleBounce() {
-    console.log(this);
+  toggleBounceAndInfoWindow() {
+    const address = this.address2
+      ? (() => {
+          var newArr = this.address1.slice();
+          newArr.splice(1, 0, this.address2);
+          return newArr.join(',');
+        })()
+      : this.address1.join(',');
+    const content = `<div>Account Id:${
+      this.locationId
+    } <br />Address: ${address}</div>`;
+    infoWindow.close();
     if (this.getAnimation() !== null) {
       this.setAnimation(null);
     } else {
       this.setAnimation(google.maps.Animation.BOUNCE);
+      infoWindow.setContent(content);
+      infoWindow.open(map, this);
+    }
+    previusMarker = previusMarker || this;
+    if (previusMarker !== this) {
+      previusMarker.setAnimation(null);
+      previusMarker = this;
     }
   }
   drop(locations) {
