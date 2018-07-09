@@ -3,6 +3,7 @@ import axios from 'axios';
 import './style.css';
 
 var map, geocoder, infoWindow, previusMarker;
+var markers = [];
 class Map extends React.Component {
   constructor(props) {
     super(props);
@@ -10,7 +11,10 @@ class Map extends React.Component {
       address: null,
       lng: null,
       lag: null,
-      radius: null
+      radius: null,
+      sessionId: this.props.sessionId,
+      useLatLng: false,
+      filter: "accountId IN ('77b0c1a5-6159-44a9-8268-07b393da0d4e')"
     };
   }
   componentDidMount() {
@@ -87,20 +91,31 @@ class Map extends React.Component {
   }
   async handleSearch() {
     try {
-      const payload = {
-        radius: this.state.radius,
-        useLatLng: true,
-        filter: "accountId IN ('77b0c1a5-6159-44a9-8268-07b393da0d4e')",
-        lat: this.state.lat,
-        lng: this.state.lng,
-        sessionId: this.props.sessionId
-      };
-      console.log('payload', payload);
+      this.setState({
+        useLatLng: true
+      });
+      if (!this.state.lat) {
+        alert('please locate yourself or enter a location first');
+        return;
+      }
+      if (!this.state.radius || !(this.state.radius > 0)) {
+        alert('please enter valid radius');
+        return;
+      }
       const response = await axios.post(
         'https://one-staging-api.brandify.com/service/location/search',
-        payload
+        this.state
       );
+      markers.forEach(marker => {
+        marker.setMap(null);
+      });
+      markers = [];
       this.drop(response.data.locations);
+
+      //-------------everytime search set this lat and lng center of the map because returning data from
+      //brandify is not accurate
+      map.setCenter({ lat: 38.755975, lng: -97.46887 });
+      map.setZoom(4);
     } catch (err) {
       console.log('err sending axios request', err);
     }
@@ -133,6 +148,7 @@ class Map extends React.Component {
           locationId: location.locationId
         });
         marker.addListener('click', self.toggleBounceAndInfoWindow);
+        markers.push(marker);
       } else {
         alert('Geocode was not successful for the following reason: ' + status);
       }
@@ -166,8 +182,8 @@ class Map extends React.Component {
   drop(locations) {
     console.log('all locations', locations);
     var self = this;
-    map.setCenter({ lat: this.state.lat, lng: this.state.lng });
-    map.setZoom(4);
+    // map.setCenter({ lat: this.state.lat, lng: this.state.lng });
+    // map.setZoom(4);
     function setDelay(location, i) {
       setTimeout(function() {
         self.mapLocationOnMap(location);
@@ -178,37 +194,87 @@ class Map extends React.Component {
     }
   }
   //*************************************************************************
+  async handleFire() {
+    try {
+      this.setState({
+        useLatLng: false
+      });
+      const { data } = await axios.post(
+        'https://one-staging-api.brandify.com/service/location/search',
+        this.state
+      );
+      markers.forEach(marker => {
+        marker.setMap(null);
+      });
+      markers = [];
+      this.drop(data.locations);
+      map.setCenter({ lat: 38.755975, lng: -97.46887 });
+      map.setZoom(4);
+    } catch (err) {
+      console.log('err handleFire', err);
+    }
+  }
+  handlefire() {}
   render() {
     return (
       <div>
+        2 way to find locations
         <div id="map" />
-        <button onClick={() => this.findCurrentLocation()}>
-          locate myself
-        </button>
-        <br />
-        or
-        <br />
-        enter your address
-        <input type="text" id="inputAddress" />
-        <button
-          onClick={() =>
-            this.codeAddress(document.getElementById('inputAddress').value)
-          }
-        >
-          submit
-        </button>
-        {this.state.lng && (
+        <div id="search">
           <div>
-            lng:{this.state.lng}, lat:{this.state.lat}
+            <h2>Method One:</h2>
+            Give me all the locations: <br />
+            <br />
+            <a className="button" onClick={() => this.handleFire()}>
+              <span>FIRE</span>
+            </a>
           </div>
-        )}
-        <br />
-        search radius:{' '}
-        <input
-          type="text"
-          onChange={e => this.setState({ radius: e.target.value })}
-        />
-        <input type="submit" onClick={() => this.handleSearch()} />
+          <br />
+          <br />
+          <hr />
+          <div className="method">
+            <h2>Method Two</h2>
+            <span>Step 1:</span>
+            <br />
+            <a
+              className="round-button"
+              onClick={() => this.findCurrentLocation()}
+            >
+              locate yourself
+            </a>
+            <br />
+            or
+            <br />
+            Enter a address
+            <br />
+            <input type="text" id="inputAddress" />
+            <br />
+            <a
+              className="round-button"
+              onClick={() =>
+                this.codeAddress(document.getElementById('inputAddress').value)
+              }
+            >
+              Find the location
+            </a>
+            {/* <a href="#" class="button">
+            Already Taken? <i class="icon-chevron-right" />
+          </a> */}
+            <br />
+            <br />
+            <br />
+            <span>Step 2:</span> <br />
+            search radius:<br />
+            <input
+              type="text"
+              onChange={e => this.setState({ radius: e.target.value })}
+            />
+            <br />
+            <div className="wrap" onClick={() => this.handleSearch()}>
+              <button className="btn">Submit</button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
