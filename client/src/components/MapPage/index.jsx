@@ -218,7 +218,6 @@ class Map extends React.Component {
   render() {
     return (
       <div>
-        2 way to find locations
         <div id="map" />
         <div id="search">
           <div>
